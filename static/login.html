@@ -6,12 +6,12 @@
 <div><h1>Invoices, checked <i>before</i> they are paid.</h1><p style="max-width:52ch;color:var(--muted)">Sign in as a vendor to submit invoices, or as a reviewer to handle the ones that need a person.</p></div>
 <form class="card" id="f" style="display:grid;gap:14px;max-width:420px"><div class="label">Sign in as</div>
 <select id="role" onchange="V()"><option value="vendor">Vendor</option><option value="reviewer">Reviewer</option><option value="admin">Admin</option></select>
-<select id="vid"></select><input id="pw" type="password" placeholder="Password" autocomplete="current-password"><div id="err" role="alert" style="color:var(--fail);min-height:20px"></div>
+<input id="vid" placeholder="Your vendor ID or company name" autocomplete="off"><input id="pw" type="password" placeholder="Password" autocomplete="current-password"><div id="err" role="alert" style="color:var(--fail);min-height:20px"></div>
 <button class="btn pri" type="submit">Sign in</button><div class="label" style="text-transform:none;letter-spacing:0">Demo password: dutpal</div></form></main>
 <script>
 const $=i=>document.getElementById(i);function T(){const d=document.documentElement;d.dataset.theme=localStorage.theme=d.dataset.theme=="dark"?"light":"dark"}
 function V(){$("vid").style.display=$("role").value=="vendor"?"":"none"}
-fetch("/api/vendors-public").then(r=>r.json()).then(v=>{$("vid").innerHTML=v.map(x=>`<option value="${x.id}">${x.name}</option>`).join("")});V();
-$("f").onsubmit=async e=>{e.preventDefault();const r=await fetch("/api/login",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({role:$("role").value,vendor_id:$("vid").value,password:$("pw").value})});
+V();
+$("f").onsubmit=async e=>{e.preventDefault();const r=await fetch("/api/login",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({role:$("role").value,vendor:$("vid").value,password:$("pw").value})});
 if(r.ok)location.href={vendor:"/vendor",reviewer:"/reviewer",admin:"/office"}[$("role").value];else $("err").textContent="That did not work. Check the role and password."}
 </script></body></html>

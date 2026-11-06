@@ -111,19 +111,20 @@ def me(request, role=None):
 
 @app.post("/api/login")
 async def login(request: Request):
-    b = await request.json()
-    role, vid = b.get("role"), b.get("vendor_id")
-    if role not in USERS or b.get("password") != PASSWORD: raise HTTPException(401, "Wrong role or password")
-    if role == "vendor" and vid not in kv("vendors"): raise HTTPException(401, "Choose a vendor")
-    name = kv("vendors")[vid]["name"] if role == "vendor" else role.title()
-    request.session["user"] = dict(role=role, vendor_id=vid if role == "vendor" else None, name=name)
+    b = await request.json(); role, vs = b.get("role"), kv("vendors")
+    fail = HTTPException(401, "Wrong role or password")          # one message for every failure, so nothing is revealed
+    if role not in USERS or b.get("password") != PASSWORD: raise fail
+    vid = None
+    if role == "vendor":      # vendors type their own vendor ID or company name; there is no public list of vendors
+        key = str(b.get("vendor") or "").strip()
+        vid = next((v["id"] for v in vs.values() if v["id"].lower() == key.lower() or (key and engine.norm(v["name"]) == engine.norm(key))), None)
+        if not vid: raise fail
+    name = vs[vid]["name"] if role == "vendor" else role.title()
+    request.session["user"] = dict(role=role, vendor_id=vid, name=name)
     audit(name, "login"); return request.session["user"]
 
 @app.post("/api/logout")
 async def logout(request: Request): request.session.clear(); return {"ok": True}
-
-@app.get("/api/vendors-public")
-def vendors_public(): return [dict(id=v["id"], name=v["name"]) for v in kv("vendors").values()]
 
 @app.get("/api/me")
 def whoami(request: Request): return me(request)
