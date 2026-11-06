@@ -1,0 +1,22 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Submit an invoice · Dutpal AP</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=Instrument+Serif:ital@0;1&display=swap"><link rel="stylesheet" href="/static/style.css">
+<script>document.documentElement.dataset.theme=localStorage.theme||(matchMedia("(prefers-color-scheme:dark)").matches?"dark":"light")</script>
+<style>main{display:grid;grid-template-columns:1fr 1fr;gap:48px;max-width:1100px;margin:48px auto;padding:0 24px}@media(max-width:800px){main{grid-template-columns:1fr}}
+#drop{border:2px dashed var(--line);border-radius:28px;padding:48px 24px;text-align:center;background:var(--card);margin-top:24px}#drop.over{border-color:var(--accent)}
+.row{padding:16px 0;border-top:1px solid var(--line);display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap}.row small{display:block;color:var(--muted);flex-basis:100%}</style></head><body>
+<div class="top"><b>Dutpal AP</b><span id="who"></span><div class="sp"></div><button onclick="T()">Light / dark</button><button onclick="O()">Sign out</button></div>
+<main><section><h1>Submit an <i>invoice</i></h1><p style="color:var(--muted)">Upload a PDF or a photo. We will tell you here once it has been checked.</p>
+<div id="drop"><p>Drag a file here</p><label class="btn pri">Choose file<input id="file" type="file" accept=".pdf,.jpg,.jpeg,.png" hidden></label><p id="msg" role="status" style="min-height:22px;color:var(--muted)"></p></div></section>
+<section><div class="label">Recent invoices</div><div id="list"></div></section></main>
+<script>
+const $=i=>document.getElementById(i);function T(){const d=document.documentElement;d.dataset.theme=localStorage.theme=d.dataset.theme=="dark"?"light":"dark"}
+async function O(){await fetch("/api/logout",{method:"POST"});location.href="/"}
+async function up(f){if(!f)return;$("msg").textContent="Sending…";const fd=new FormData();fd.append("file",f);const r=await fetch("/api/upload",{method:"POST",body:fd});
+$("msg").textContent=r.ok?"Received. The result will appear in the list.":(await r.json()).detail;load()}
+$("file").onchange=e=>up(e.target.files[0]);const d=$("drop");["dragover","dragenter"].forEach(n=>d.addEventListener(n,e=>{e.preventDefault();d.classList.add("over")}));
+["dragleave","drop"].forEach(n=>d.addEventListener(n,e=>{e.preventDefault();d.classList.remove("over")}));d.addEventListener("drop",e=>up(e.dataTransfer.files[0]));
+const esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+async function load(){const r=await fetch("/api/my-invoices");if(r.status==401)return location.href="/";const L=await r.json();
+$("list").innerHTML=L.length?L.map(i=>`<div class="row ${i.status}"><span>${esc(i.invoice_no||i.filename)}</span><span><i class="dot"></i>${i.label}</span>${i.message?`<small>${esc(i.message)}</small>`:""}</div>`).join(""):'<p style="color:var(--muted)">Nothing yet. Your submitted invoices will appear here.</p>'}
+fetch("/api/me").then(r=>r.json()).then(u=>$("who").textContent=u.name);load();setInterval(load,2000);
+</script></body></html>

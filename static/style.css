@@ -1,0 +1,14 @@
+:root{--canvas:#E9F4F1;--ink:#0F2A2B;--accent:#1F7A6D;--review:#A15C07;--fail:#C0392B;--pass:#237A4B;--line:#CFE3DE;--card:#fff;--muted:#5d7a77;
+--glow:radial-gradient(900px 500px at 90% -10%,#d3efe8,transparent),radial-gradient(700px 400px at -5% 110%,#dbe8f7,transparent)}
+:root[data-theme=dark]{--canvas:#04100F;--ink:#E6F5F1;--accent:#4FD1B5;--review:#E3B04B;--fail:#F2836E;--pass:#5FD38D;--line:#16302D;--card:#0B1A19;--muted:#8fb0aa;
+--glow:radial-gradient(900px 500px at 10% -10%,#0b3a33,transparent),radial-gradient(700px 400px at 105% 110%,#0b3a33,transparent)}
+*{box-sizing:border-box}body{margin:0;background:var(--glow),var(--canvas);color:var(--ink);font:15px/1.5 Inter,system-ui,sans-serif;min-height:100vh}
+h1,h2{font-family:"Instrument Serif",Georgia,serif;font-weight:400;margin:0}h1{font-size:clamp(40px,6vw,64px);line-height:1.05}h1 i{color:var(--accent)}
+.top{display:flex;align-items:center;gap:16px;padding:18px 32px;border-bottom:1px solid var(--line)}.top b{font-size:17px}.top .sp{flex:1}.top span{color:var(--muted)}
+button,.btn{font:inherit;cursor:pointer;border-radius:999px;padding:10px 20px;border:1px solid var(--line);background:transparent;color:var(--ink)}
+.btn.pri{background:var(--ink);color:var(--canvas);border-color:var(--ink)}button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:24px;padding:28px}
+input,select{font:inherit;width:100%;padding:11px 14px;border-radius:12px;border:1px solid var(--line);background:var(--card);color:var(--ink)}
+.dot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:8px;background:var(--muted)}.approved .dot{background:var(--pass)}.review .dot,.processing .dot{background:var(--review)}
+.rejected .dot,.reupload .dot,.error .dot{background:var(--fail)}.processing .dot{animation:p 1s infinite alternate}@keyframes p{to{opacity:.25}}
+.label{font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}

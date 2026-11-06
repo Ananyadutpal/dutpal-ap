@@ -1,0 +1,47 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Review · Dutpal AP</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=Instrument+Serif:ital@0;1&display=swap"><link rel="stylesheet" href="/static/style.css">
+<script>document.documentElement.dataset.theme=localStorage.theme||(matchMedia("(prefers-color-scheme:dark)").matches?"dark":"light")</script>
+<style>main{display:grid;grid-template-columns:340px 1fr;min-height:calc(100vh - 62px)}@media(max-width:900px){main{grid-template-columns:1fr}}
+aside{border-right:1px solid var(--line);padding:18px;overflow:auto;max-height:calc(100vh - 62px)}.it{padding:12px 10px;border-radius:14px;cursor:pointer;display:grid;gap:2px}.it:hover,.it.on{background:var(--card)}
+.it small{color:var(--muted)}.red{color:var(--fail)}section{padding:28px 32px;display:grid;gap:24px;align-content:start}.g2{display:grid;grid-template-columns:1fr 1fr;gap:24px}@media(max-width:1100px){.g2{grid-template-columns:1fr}}
+.st{display:flex;gap:12px;padding:9px 0;border-top:1px solid var(--line)}.st b{flex:0 0 96px}.st span{color:var(--muted);flex:1}.pass .dot{background:var(--pass)}.flag .dot,.running .dot,.review .dot{background:var(--review)}.fail .dot,.rejected .dot{background:var(--fail)}
+.running .dot{animation:p .7s infinite alternate}.skipped{opacity:.5}.bar{display:flex;gap:4px}.bar i{width:34px;height:6px;border-radius:3px;background:var(--line)}
+iframe,img.src{width:100%;height:520px;border:1px solid var(--line);border-radius:16px;background:#fff;object-fit:contain}table{width:100%;border-collapse:collapse}td{padding:6px 0;border-top:1px solid var(--line)}td:last-child{text-align:right}
+textarea{font:inherit;width:100%;min-height:64px;padding:10px 14px;border-radius:12px;border:1px solid var(--line);background:var(--card);color:var(--ink)}.row{display:flex;gap:10px;flex-wrap:wrap}.btn.fail{color:var(--fail);border-color:var(--fail)}
+.warn{background:color-mix(in srgb,var(--review) 14%,transparent);border:1px solid var(--review);border-radius:14px;padding:14px 16px}</style></head><body>
+<div class="top"><b>Dutpal AP</b><span>Reviewer</span><a href="/office" class="btn">Dashboard, vendors, audit</a><div class="sp"></div><button onclick="T()">Light / dark</button><button onclick="O()">Sign out</button></div>
+<main><aside><div class="row" style="margin-bottom:12px"><select id="flt" onchange="L()" style="flex:1"><option value="need">Needs review</option><option value="all">All invoices</option></select></div>
+<label style="display:flex;gap:8px;margin-bottom:10px;color:var(--muted)"><input type="checkbox" id="fol" checked style="width:auto">Follow newest upload</label><div id="list"></div></aside>
+<section id="det"><h2 style="font-size:34px">Select an invoice</h2><p style="color:var(--muted)">Uploads appear here as they are processed. Each check shows as it runs.</p></section></main>
+<script>
+const $=i=>document.getElementById(i),esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c])),inr=n=>"₹"+Math.round(n||0).toLocaleString("en-IN");
+function T(){const d=document.documentElement;d.dataset.theme=localStorage.theme=d.dataset.theme=="dark"?"light":"dark"}async function O(){await fetch("/api/logout",{method:"POST"});location.href="/"}
+const TXT={processing:"Checking",approved:"Approved",review:"Under review",admin_pending:"With Admin",rejected:"Rejected",reupload:"Re-upload requested",error:"Error"};
+const BANDS=["Very low","Low","Medium","High","Very high"];let sel=null,seen=new Set(),first=true,cur=null;
+const bar=r=>{const n=BANDS.indexOf(r)+1,c=n>=4?"var(--fail)":n==3?"var(--review)":"var(--pass)";return r?`<div class="bar" title="${r}">${[1,2,3,4,5].map(i=>`<i style="${i<=n?"background:"+c:""}"></i>`).join("")}</div>`:""};
+async function L(){const r=await fetch("/api/r/invoices");if(r.status==401||r.status==403)return location.href="/";let a=await r.json();
+if(first){a.forEach(x=>seen.add(x.id));first=false}else if($("fol").checked){const n=a.find(x=>!seen.has(x.id));if(n)sel=n.id}a.forEach(x=>seen.add(x.id));
+if($("flt").value=="need")a=a.filter(x=>["review","admin_pending","processing"].includes(x.status));
+const html=a.map(x=>`<div class="it ${x.id==sel?"on":""}" onclick="sel='${x.id}';D();L()"><b>${esc(x.invoice_no||x.filename)}</b><span>${esc(x.vendor)}</span>
+<small class="${x.overdue?"red":""}"><i class="dot ${x.status}"></i>${TXT[x.status]}${x.risk?" · "+x.risk+" risk":""}${x.overdue?" · pending "+x.age+" days":""}</small></div>`).join("")||'<p style="color:var(--muted)">Nothing waiting.</p>';if(html!==hList){hList=html;$("list").innerHTML=html}}
+let sf=null,hTop="",hData="",hList="";
+async function D(){if(!sel)return;const r=await fetch("/api/r/invoice/"+sel);if(!r.ok)return;const v=await r.json();if(v.id!=sel)return;cur=v;
+const e=v.extracted||{},R=v.result||{},act=v.status=="review",conf=Math.min(...Object.values(e.confidence||{1:1}));
+const pipe=(v.live||[]).map(s=>`<div class="st ${s.status}"><b><i class="dot"></i>${s.stage}</b><span>${esc(s.detail||(s.status=="running"?"Working…":""))}</span></div>`).join("");
+const rows=[["Vendor",e.vendor_name],["GSTIN",e.vendor_gstin],["Invoice no.",e.invoice_no],["Date",e.date],["PO",e.po_ref],["Billed to",e.buyer_name],["Subtotal",e.subtotal!=null?inr(e.subtotal):""],["GST",e.tax!=null?inr(e.tax):""],["Total",e.total!=null?inr(e.total):""],
+["Bank",e.bank_account?`${esc(e.bank_name||"")} ••${esc(String(e.bank_account).slice(-4))}`:""],["Lowest read confidence",e.confidence?Math.round(conf*100)+"%":""]];
+const checks=(R.checks||[]).map(c=>`<div class="st ${c.status}"><b><i class="dot"></i>${esc(c.name)}</b><span>${esc(c.detail)}</span></div>`).join("");
+const late=R.late&&act?`<label class="warn"><input type="checkbox" id="cut" style="width:auto"> Cut the suggested late-delivery penalty of ${inr(R.late.suggested_penalty)} (${R.late.days} days late). Nothing is cut unless you tick this.</label>`:"";
+const dec=R.decision?`<p class="warn">${TXT[v.status]} by ${esc(R.decision.by)} ${esc(R.decision.at.replace("T"," "))}. Payable: ${inr(R.decision.payable)}${R.decision.note?" · “"+esc(R.decision.note)+"”":""}</p>`:"";
+const acts=act?`${late}<textarea id="note" placeholder="Note (required to reject or add a note)"></textarea><div class="row">${R.needs_admin?`<button class="btn pri" onclick="A('send_admin')">Send to Admin for approval</button>`:`<button class="btn pri" onclick="A('approve')">Approve</button>`}<button class="btn fail" onclick="A('reject')">Reject</button><button class="btn" onclick="A('note')">Add note</button></div>`:(v.status=="admin_pending"?'<p class="warn">Waiting for Admin approval of the bank-detail change.</p>':"");
+const top=`<div><div class="label">${esc(v.vendor)} · ${esc(v.filename)}</div><h2 style="font-size:46px;margin:6px 0">${TXT[v.status]}</h2><div class="row" style="align-items:center">${bar(R.risk)}<span>${R.risk?R.risk+" risk · "+R.points+" pts":""}</span></div><p style="max-width:70ch">${esc(R.summary||"")}</p></div>
+<div class="g2"><div><div class="label">Pipeline</div>${pipe}</div><div class="card" style="display:grid;gap:14px">${dec}${acts}${R.read_seconds!=null?`<span class="label">Read in ${R.read_seconds}s</span>`:""}</div></div>`;
+const dat=`<div class="label">Extracted data</div><table>${rows.map(r=>`<tr><td>${r[0]}</td><td>${esc(r[1])}</td></tr>`).join("")}</table><div class="label" style="margin-top:20px">All checks</div>${checks||"<p style='color:var(--muted)'>Waiting for results…</p>"}
+<div class="label" style="margin-top:20px">History</div>${v.audit.map(a=>`<div class="st"><b>${esc(a.ts.slice(5).replace("T"," "))}</b><span>${esc(a.actor)}: ${esc(a.action)} ${esc(a.detail||"")}</span></div>`).join("")}`;
+if(sf!==sel){sf=sel;hTop=hData="";$("det").innerHTML=`<div id="top"></div><div class="g2"><div><div class="label">Invoice as uploaded</div>${v.ext==".pdf"?`<iframe src="/api/r/file/${v.id}" title="Invoice"></iframe>`:`<img class="src" src="/api/r/file/${v.id}" alt="Invoice">`}</div><div id="data"></div></div>`}
+if(top!==hTop){const keep=$("note")?.value||"";hTop=top;$("top").innerHTML=top;if(keep&&$("note"))$("note").value=keep}
+if(dat!==hData){hData=dat;$("data").innerHTML=dat}}
+async function A(a){const n=$("note").value,r=await fetch(`/api/r/invoice/${sel}/action`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:a,note:n,cut_penalty:!!$("cut")?.checked})});
+if(!r.ok)alert((await r.json()).detail);D();L()}
+L();setInterval(L,2000);setInterval(D,1000);
+</script></body></html>
