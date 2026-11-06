@@ -86,6 +86,8 @@ SCEN = [
  ("13_totals_do_not_add_up.pdf", M("V2", "7790", "Steel plate", 50, 2200, "BS-1006", total=134800.0)),
  ("14_wrong_bill_to.pdf", M("V2", "7790", "Steel plate", 50, 2200, "BS-1007", buyer_name="Other Corp Ltd", buyer_gstin="27AAACO1111A1Z5")),
  ("15_overbilled_beyond_limit.pdf", M("V2", "7790", "Steel plate", 50, 2240, "BS-1002")),
+ ("17_perfect_invoice_acme.pdf", M("V1", "7850", "Bearing set", 40, 4800, "INV-3001")),
+ ("18_perfect_invoice_nova.pdf", M("V4", "7860", "Carton box", 60, 350, "NP-120")),
  ("16_happy_path_photo_kiran.jpg", M("V3", "7830", "Cooking oil 15L", 40, 2100, "KF-401"), dict(rot=2)),
 ]
 if __name__ == "__main__":

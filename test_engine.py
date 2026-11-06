@@ -20,6 +20,8 @@ def run(name, expect, expect_risk=None, ctx=None, **kw):
     assert ok, r["summary"]; return r
 
 run("Happy path", "approved", "Very low")
+run("Perfect invoice (Acme, fresh PO)", "approved", "Very low", vid="V1", po="7850", item="Bearing set", qty=40, price=4800, no="INV-3001")
+run("Perfect invoice (Nova, fresh PO)", "approved", "Very low", vid="V4", po="7860", item="Carton box", qty=60, price=350, no="NP-120")
 r = run("EDGE 1 bank account changed", "review", "High", vid="V1", po="7781", item="Bearing set", qty=100, price=4800, no="INV-2041", bank_name="ICICI", bank_account="0123456773 05", bank_ifsc="ICIC0001234")
 assert r["needs_admin"]
 r = run("EDGE 2 billed 100, received 80", "rejected", vid="V4", po="7802", item="Carton box", qty=100, price=350, no="NP-77")

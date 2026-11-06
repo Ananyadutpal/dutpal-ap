@@ -25,6 +25,9 @@ POS = {p["no"]: p for p in [
  _po("7802", "V4", "2026-10-03", "open", "2026-10-18", "Carton box", 100, 350),
  _po("7810", "V3", "2026-10-01", "open", "2026-10-10", "Rice bag 25kg", 200, 1450),
  _po("7820", "V2", "2026-10-04", "open", "2026-10-20", "Hydraulic pump", 10, 50000),
+ _po("7850", "V1", "2026-10-06", "open", "2026-10-24", "Bearing set", 40, 4800),
+ _po("7860", "V4", "2026-10-06", "open", "2026-10-24", "Carton box", 60, 350),
+ _po("7830", "V3", "2026-10-05", "open", "2026-10-22", "Cooking oil 15L", 40, 2100),
 ]}
 
 def _g(item, rec, rej, delivered):
@@ -36,6 +39,9 @@ GRN = {
  "7802": _g("Carton box", 80, 0, "2026-10-17"),          # only 80 of 100 arrived
  "7810": _g("Rice bag 25kg", 200, 0, "2026-10-16"),      # 6 days late
  "7820": _g("Hydraulic pump", 10, 0, "2026-10-19"),
+ "7850": _g("Bearing set", 40, 0, "2026-10-22"),
+ "7860": _g("Carton box", 60, 0, "2026-10-22"),
+ "7830": _g("Cooking oil 15L", 40, 0, "2026-10-21"),
 }
 
 SETTINGS = {"auto_pct": 1, "auto_rs": 100, "review_pct": 5, "review_rs": 1000, "rounding": 2,
