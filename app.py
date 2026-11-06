@@ -61,7 +61,7 @@ def offline_extract(filename):
                 confidence={"total": 0.4} if "blurry" in filename else {})
 
 STAGES = ["Read", "Vendor", "Document", "PO", "GRN", "Tolerance", "Decision"]
-PACE = float(os.getenv("STAGE_PACE", "0.45"))   # rules run in milliseconds; the reveal is paced so people can follow each stage
+PACE = float(os.getenv("STAGE_PACE", "0.25"))   # rules run in milliseconds; the reveal is paced so people can follow each stage
 def setlive(i, live): q("UPDATE invoices SET live=? WHERE id=?", (json.dumps(live), i), write=True)
 
 NOT_COUNTED = {"Required fields", "Read confidence", "Totals add up", "Invoice date", "Currency"}   # honest slips are not red flags
@@ -289,6 +289,52 @@ def s_stats(request: Request):
 
 @app.get("/api/s/audit")
 def s_audit(request: Request): staff(request); return [dict(r) for r in q("SELECT ts,actor,action,invoice_id,detail FROM audit ORDER BY id DESC LIMIT 400")]
+
+def isodate(x):
+    try: datetime.fromisoformat(str(x)); return str(x)[:10]
+    except ValueError: bad("Dates must look like 2026-10-25")
+
+@app.get("/api/s/pos")
+def s_pos(request: Request):
+    staff(request)
+    return [dict(no=p["no"], vendor=vname(p["vendor_id"]), date=p["date"], promised=p["promised"], status=p["status"], total=p["total"],
+                 lines=[dict(item=l["item"], qty=l["qty"], price=l["price"]) for l in p["lines"]]) for p in kv("pos").values()]
+
+@app.post("/api/s/pos")
+async def s_po_add(request: Request):
+    u = staff(request); b = await request.json(); pos, no = kv("pos"), str(b.get("no", "")).strip()
+    try: qty, price = float(b.get("qty")), float(b.get("price"))
+    except (TypeError, ValueError): bad("Quantity and price must be numbers")
+    item = (b.get("item") or "").strip()
+    if not no or no in pos: bad("Enter a new PO number")
+    if b.get("vendor_id") not in kv("vendors"): bad("Choose a vendor")
+    if not item or qty <= 0 or price <= 0: bad("Enter an item, a quantity and a price above zero")
+    qty = int(qty) if qty == int(qty) else qty
+    pos[no] = dict(no=no, vendor_id=b["vendor_id"], date=isodate(b.get("date")), status="open", promised=isodate(b.get("promised")),
+                   lines=[dict(item=item, qty=qty, price=price)], total=qty * price)
+    setkv("pos", pos); audit(u["name"], "po_added", "", f"PO {no}: {item} x{qty} @ {price:g}"); return {"ok": True}
+
+@app.post("/api/s/pos/{no}/status")
+async def s_po_status(no: str, request: Request):
+    u = staff(request); b = await request.json(); pos = kv("pos")
+    if no not in pos or b.get("status") not in ("open", "closed", "cancelled"): bad("Nothing to change")
+    pos[no]["status"] = b["status"]; setkv("pos", pos); audit(u["name"], "po_status", "", f"PO {no} set to {b['status']}"); return {"ok": True}
+
+@app.get("/api/s/grn")
+def s_grn(request: Request):
+    staff(request)
+    return [dict(po=po, item=k, **r) for po, items in kv("grn").items() for k, r in items.items()]
+
+@app.post("/api/s/grn")
+async def s_grn_add(request: Request):
+    u = staff(request); b = await request.json(); pos, grn, po = kv("pos"), kv("grn"), str(b.get("po", ""))
+    item = (b.get("item") or "").strip().lower()
+    if po not in pos or item not in [l["item"].lower() for l in pos[po]["lines"]]: bad("That item is not on that PO")
+    try: rec, rej = float(b.get("received")), float(b.get("rejected") or 0)
+    except (TypeError, ValueError): bad("Quantities must be numbers")
+    if rec < 0 or rej < 0 or rej > rec: bad("Check the received and rejected quantities")
+    grn.setdefault(po, {})[item] = dict(received=int(rec) if rec == int(rec) else rec, rejected=int(rej) if rej == int(rej) else rej, delivered=isodate(b.get("delivered")))
+    setkv("grn", grn); audit(u["name"], "grn_recorded", "", f"PO {po}: {item} received {rec:g}, rejected {rej:g}"); return {"ok": True}
 
 def page(name, role=None):
     def h(request: Request):
